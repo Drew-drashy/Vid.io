@@ -1,0 +1,73 @@
+# =========================================
+# Node & Express.js Git Ignore Template
+# =========================================
+
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage / Testing
+coverage/
+.nyc_output/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+tmp/
+temp/
+
+# TypeScript (if using)
+*.tsbuildinfo
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Optional: ignore test snapshots or reports
+jest-html-reporters-*
+reports/
+
+# Optional: lock files (if using different package managers)
+# Uncomment the ones you don't use
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Optional: ignore uploaded files
+uploads/
+public/uploads/
+
+# Optional: ignore Redis or database dump files
+*.rdb
+*.sqlite
+*.db
+dump.rdb
+
+# Ignore local SSL keys or certs
+*.pem
+*.key
+*.crt
