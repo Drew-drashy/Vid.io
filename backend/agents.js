@@ -8,16 +8,16 @@ import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
 
 import z from "zod";
 import { tool } from "langchain";
+import { MemorySaver } from "@langchain/langgraph";
 
 
 
-// 1️⃣ Initialize Gemini LLM
+
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// 2️⃣ Prepare documents and split into chunks
 const docs = [new Document({ pageContent: data.content })];
 const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
@@ -25,24 +25,20 @@ const splitter = new RecursiveCharacterTextSplitter({
 });
 const chunks = await splitter.splitDocuments(docs);
 
-// 3️⃣ Initialize embeddings
 const embeddings = new GoogleGenerativeAIEmbeddings({
   model: "embedding-001",
   apiKey: process.env.GEMINI_API_KEY,
 });
-
-// 4️⃣ Create an in-memory vector store
 const vectorStore = new MemoryVectorStore(embeddings);
 await vectorStore.addDocuments(chunks);
 
-// // 5️⃣ Retrieve similar documents
-
-// // 6️⃣ Create an agent (you can later add tools)
+const checkpointer = new MemorySaver();
 const agent = createReactAgent({
   llm,
   tools: [retrieveTool],
+  checkpointer
 });
-const retrieveTool = tool(async ({ query }) => {
+const retrieveTool = tool(async ({ query },{configurable:{videoId}} ) => {
   const retrievedDocs = await vectorStore.similaritySearch(query, 5);
   const serializedDocs = await retrievedDocs.map((docs)=>docs.pageContent).join("\n"); 
   return serializedDocs;
@@ -54,12 +50,11 @@ const retrieveTool = tool(async ({ query }) => {
   }),
 });
 
-// Optional: Run a query to test agent
 const results = await agent.invoke({
   messages: [
     { role: "user", content: "Use the retrieve_tool to answer this: What did Nos finish first?" },
   ],
-});
+}, {configurable:{thread_id:1, videoId}});
 
 console.log(results);
 // console.log("✅ Split Chunks:", chunks);
