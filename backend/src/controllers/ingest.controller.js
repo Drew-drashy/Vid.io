@@ -1,7 +1,8 @@
-import Transcript from "../models/Transcript.model.js";
-import VideoJob from "../models/VideoJob.model.js";
-import { extractVideoId, fetchTranscript } from "../utils/helpers.js";
+import Transcript from "../models/transcript.model.js";
 import { embeddingQueue } from "../services/queue.service.js";
+import videoJob from "../models/videoJob.models.js";
+import { extractVideoId } from "../utils/utils.js";
+import { fetchTranscript } from "../services/youtube.service.js";
 
 export const ingestController = async (req, res) => {
   try {
@@ -81,4 +82,11 @@ export const ingestController = async (req, res) => {
     console.error("Ingest error:", err);
     res.status(500).json({ error: err.message });
   }
+};
+export const queryController = async (req, res) => {
+  const { question, videoId } = req.body;
+
+  const answer = await askRAG(question, videoId);
+
+  res.json({ answer });
 };

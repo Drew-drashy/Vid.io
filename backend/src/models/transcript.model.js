@@ -6,4 +6,4 @@ const transcriptSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export const Transcript = mongoose.model("Transcript", transcriptSchema);
+export default mongoose.model("Transcript", transcriptSchema);

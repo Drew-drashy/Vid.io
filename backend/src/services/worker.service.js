@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
-import VideoJob from "../models/VideoJob.model.js";
-import Transcript from "../models/Transcript.model.js";
+import VideoJob from "../models/videoJob.models.js";
+import Transcript from "../models/transcript.model.js";
 import fetch from "node-fetch";
 
 new Worker(

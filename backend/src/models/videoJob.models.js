@@ -1,10 +1,27 @@
+import mongoose from "mongoose";
 
-const videoJob = new mongoose.schema({
-    videoId: String,
- status: {
+const VideoJobSchema = new mongoose.Schema({
+  videoId: {
     type: String,
-    default: "pending", // pending | processing | completed | failed
+    required: true,
   },
-  createdAt: { type: Date, default: Date.now }
-})
-export default mongoose.model("Job", videoJob);
+  status: {
+    type: String,
+    enum: ["pending", "processing", "completed", "failed"],
+    default: "pending",
+  },
+  errorMessage: {
+    type: String,
+    default: null,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  }
+});
+
+export default mongoose.model("VideoJob", VideoJobSchema);

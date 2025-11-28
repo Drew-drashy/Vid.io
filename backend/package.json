@@ -22,6 +22,7 @@
     "bullmq": "^5.65.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "ioredis": "^5.8.2",
     "langchain": "^1.0.4",
     "mongoose": "^8.20.1",
     "nodemon": "^3.1.11",

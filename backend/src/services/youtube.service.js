@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { Transcript } from "../models/transcript.model.js";
+import  Transcript from "../models/transcript.model.js";
 
 export async function getSupadata(videoId) {
     const youtubeUrl = `https://youtu.be/${videoId}`;
