@@ -1,4 +1,4 @@
-import { Transcript } from "../models/transcript.model.js";
+import  Transcript  from "../models/Transcript.model";
 
 export async function saveTranscript(videoId, text) {
   const doc = await Transcript.create({

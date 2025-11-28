@@ -36,13 +36,6 @@ export async function getSupadata(videoId) {
 }
 
 export async function fetchTranscript(videoId) {
-  const existing = await Transcript.findOne({ videoId });
-  console.log(existing , "existing transcript")
-  if (existing) {
-    console.log("📦 Transcript found in DB — skipping Supadata");
-    return existing.text;
-  }
-
   const data = await getSupadata(videoId);
   return data;
 }
