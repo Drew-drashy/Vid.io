@@ -1,0 +1,51 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.pickle
+
+# ---- Virtual Environment ----
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# ---- FastAPI / Uvicorn ----
+*.log
+*.pid
+
+# ---- Cache / Build ----
+*.egg-info/
+dist/
+build/
+.eggs/
+.cache/
+.pytest_cache/
+
+# ---- Jupyter / Notebooks ----
+.ipynb_checkpoints/
+
+# ---- OS Files ----
+.DS_Store
+Thumbs.db
+
+# ---- IDE ----
+.vscode/
+.idea/
+
+# ---- env files ----
+.env
+.env.*
+*.env
+
+# ---- Model Downloads (Sentence Transformers) ----
+models/
+sentence-transformers/
+huggingface/
+.conda/
+
+# ---- Qdrant local data ----
+qdrant_data/
