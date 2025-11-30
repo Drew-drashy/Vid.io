@@ -1,9 +1,8 @@
 import z from "zod";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { MemorySaver } from "@langchain/langgraph";
-import { createAgent, tool } from "langchain";
-import { getVectorStore } from "./vectorStore.js";
-import { embedQueryPython } from "../services/embedding.service.js";
+import { tool } from "langchain";
+import { searchSimilarChunks } from "./vectorStore.js";
 
 const llm = new ChatGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -12,49 +11,12 @@ const llm = new ChatGoogleGenerativeAI({
 
 const retrieveTool = tool(
   async ({ query, videoId }) => {
-    try {
-      const store = await getVectorStore();
+    const results = await searchSimilarChunks(query, videoId);
 
-      // Make sure query is valid
-      if (!query || typeof query !== "string") {
-        throw new Error("Query must be a non-empty string.");
-      }
-
-      // Embed the question
-      const queryEmbedding = await embedQueryPython(query);
-
-      if (!Array.isArray(queryEmbedding)) {
-        throw new Error("Embedding service returned invalid format.");
-      }
-
-      console.log("Embedding:", queryEmbedding);
-      console.log("Filtering by videoId:", videoId);
-      const filter = {
-  "must": [
-      { "key": "videoId", "match": { "value": videoId } },
-  ]
-};
-
-      // Perform filtered search
-      const docs = await store.similaritySearchVectorWithScore(
-        queryEmbedding,
-        5,
-        filter
-      );
-
-      console.log("RESULTS:", docs);
-
-      if (!docs || docs.length === 0) {
-        return "No transcript found for this video.";
-      }
-
-      return docs.map(d => d[0].pageContent).join("\n");
-
-    } catch (err) {
-      console.error("❌ retrieve_tool error:", err);
-
-      return `Error: ${err.message || "Something went wrong in retrieve_tool."}`;
-    }
+    return results
+      .map(r => r.payload?.text)
+      .filter(Boolean)
+      .join("\n");
   },
   {
     name: "retrieve_tool",

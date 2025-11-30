@@ -9,6 +9,7 @@ export const qdrant = new QdrantClient({
 
 export async function initQdrant() {
   const collection = process.env.QDRANT_COLLECTION;
+  const vectorSize = Number(process.env.QDRANT_VECTOR_SIZE || 384);
 
   const exists = await qdrant.getCollection(collection).catch(() => null);
 
@@ -16,7 +17,7 @@ export async function initQdrant() {
     console.log("⚙️ Creating Qdrant collection...");
     await qdrant.createCollection(collection, {
       vectors: {
-        size: 768,
+        size: vectorSize,
         distance: "Cosine",
       },
     });
