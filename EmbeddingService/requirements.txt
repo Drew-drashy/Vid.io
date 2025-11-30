@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+requests
+sentence-transformers
+qdrant-client
+numpy
+langchain
+langchain-community
+langchain-qdrant
+python-dotenv
+langchain_huggingface

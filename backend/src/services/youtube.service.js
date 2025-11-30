@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { Transcript } from "../models/transcript.model.js";
+import  Transcript from "../models/transcript.model.js";
 
 export async function getSupadata(videoId) {
     const youtubeUrl = `https://youtu.be/${videoId}`;
@@ -36,13 +36,6 @@ export async function getSupadata(videoId) {
 }
 
 export async function fetchTranscript(videoId) {
-  const existing = await Transcript.findOne({ videoId });
-  console.log(existing , "existing transcript")
-  if (existing) {
-    console.log("📦 Transcript found in DB — skipping Supadata");
-    return existing.text;
-  }
-
   const data = await getSupadata(videoId);
   return data;
 }

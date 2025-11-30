@@ -2,6 +2,7 @@ import "dotenv/config";
 import { connectDB } from "./config/db.js";
 import { initQdrant } from "./rag/qdrant.js";
 import { app } from "./app.js";
+import "./services/worker.service.js"
 
 (async () => {
   try {
@@ -24,3 +25,4 @@ import { app } from "./app.js";
     process.exit(1); 
   }
 })();
+ 
