@@ -8,5 +8,7 @@ export async function askRAG(question, videoId) {
         content: `Use retrieve_tool.\nvideoId: ${videoId}\nquestion: ${question}`
       }
     ]
+  }, {
+    configurable: { thread_id: "vidio-" + Date.now() }
   });
 }

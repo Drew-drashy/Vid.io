@@ -6,7 +6,7 @@ export const qdrant = new QdrantClient({
 
 });
 
-// init collection if not exists
+
 export async function initQdrant() {
   const collection = process.env.QDRANT_COLLECTION;
 
@@ -21,6 +21,22 @@ export async function initQdrant() {
       },
     });
   }
+ const test = await qdrant.scroll(process.env.QDRANT_COLLECTION, {
+  filter: {
+    must: [
+      {
+        key: "videoId",
+        match: {
+          value: "2pS0KgQtO8Y"
+        }
+      }
+    ]
+  },
+  limit: 5,
+});
+
+
+console.log("🔥 FILTER TEST RESULT:", JSON.stringify(test, null, 2));
 
   console.log("QDRANT DB CONNECTED");
 }

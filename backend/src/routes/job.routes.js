@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { updateJobStatus } from "../controllers/job.controller.js";
+import { getJobStatus, updateJobStatus } from "../controllers/job.controller.js";
 
 const router = Router()
-router.use("/status", updateJobStatus)
+router.post("/status", updateJobStatus)
+router.get("/status/:jobId", getJobStatus)
 export default router

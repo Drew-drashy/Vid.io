@@ -1,11 +1,16 @@
 import Transcript from "../models/transcript.model.js";
 import { embeddingQueue } from "../services/queue.service.js";
-import videoJob from "../models/videoJob.models.js";
+import VideoJob from "../models/videoJob.models.js";
 import { extractVideoId } from "../utils/utils.js";
 import { fetchTranscript } from "../services/youtube.service.js";
 
 export const ingestController = async (req, res) => {
   try {
+     console.log("Waiting:", await embeddingQueue.getWaiting());
+  console.log("Active:", await embeddingQueue.getActive());
+  console.log("Delayed:", await embeddingQueue.getDelayed());
+  console.log("Completed:", await embeddingQueue.getCompleted());
+  console.log("Failed:", await embeddingQueue.getFailed());
     const { videoUrl } = req.body;
     if (!videoUrl) return res.status(400).json({ error: "videoUrl required" });
 
@@ -27,7 +32,7 @@ export const ingestController = async (req, res) => {
         });
       }
 
-      if (["queued", "processing", "pending"].includes(existingJob.status)) {
+      if ([ "processing", "pending"].includes(existingJob.status)) {
         return res.json({
           transcriptId: transcript._id,
           jobId: existingJob._id,
@@ -68,7 +73,7 @@ export const ingestController = async (req, res) => {
 
     // Update job with queue id
     jobDoc.queueId = queueJob.id;
-    jobDoc.status = "queued";
+    jobDoc.status = "processing";
     await jobDoc.save();
 
     return res.json({
@@ -83,10 +88,4 @@ export const ingestController = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-export const queryController = async (req, res) => {
-  const { question, videoId } = req.body;
 
-  const answer = await askRAG(question, videoId);
-
-  res.json({ answer });
-};

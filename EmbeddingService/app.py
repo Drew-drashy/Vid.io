@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor
 import requests
 
-from embedder import embed_and_store
+from embedder import embed_and_store , embed_query_text
 from splitter import split_into_chunks
 from config import BACKEND_URL, MAX_WORKERS, CHUNK_SIZE, CHUNK_OVERLAP
 
@@ -41,7 +41,7 @@ def run_job(req: ProcessReq):
 
         # 3. CALLBACK to Backend
         requests.post(
-            f"{BACKEND_URL}/updateStatus",
+            f"{BACKEND_URL}/api/job/status",
             json={
                 "jobId": jobId,
                 "videoId": videoId,
@@ -55,10 +55,23 @@ def run_job(req: ProcessReq):
         print(f"[Error] Job {jobId} failed:", e)
 
         requests.post(
-            f"{BACKEND_URL}/updateStatus",
+            f"{BACKEND_URL}/api/job/status",
             json={
                 "jobId": jobId,
                 "videoId": videoId,
-                "status": "failed"
-            }
+                "status": "failed",
+                "errorMessage":str(e)
+                }
         )
+class QueryReq(BaseModel):
+    text: str
+
+@app.post("/embed-query")
+async def embed_query(req: QueryReq):
+    try:
+        print(req)
+        vector = embed_query_text(req.text)
+        return {"embedding": vector}
+    except Exception as e:
+        print("[Error] embed-query:", e)
+        return {"error": str(e)}

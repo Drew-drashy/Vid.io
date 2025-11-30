@@ -31,8 +31,8 @@ new Worker(
   },
   {
     connection: {
-      host: process.env.REDIS_HOST,
-      port: 6379
+      url: process.env.REDIS_HOST,
+      // tls:{}
     }
   }
 );

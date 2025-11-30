@@ -1,22 +1,10 @@
 import { QdrantVectorStore } from "@langchain/qdrant";
-import { embeddings } from "./embedding.js";
+import {  NoOpEmbeddings } from "./embedding.js";
 
 export async function getVectorStore() {
-  return await QdrantVectorStore.fromExistingCollection(embeddings, {
+  return await QdrantVectorStore.fromExistingCollection(new NoOpEmbeddings(), {
     url: process.env.QDRANT_URL,
     collectionName: process.env.QDRANT_COLLECTION
   });
 }
 
-export async function addChunksToQdrant(chunks, videoId) {
-  const store = await getVectorStore();
-
-  const docs = chunks.map(c => 
-    new Document({
-      pageContent: c,
-      metadata: { videoId }
-    })
-  );
-
-  await store.addDocuments(docs);
-}

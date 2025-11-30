@@ -1,6 +1,10 @@
-import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { Embeddings } from "@langchain/core/embeddings";
 
-export const embeddings = new GoogleGenerativeAIEmbeddings({
-  model: "embedding-001",
-  apiKey: process.env.GEMINI_API_KEY
-});
+export class NoOpEmbeddings extends Embeddings {
+  async embedDocuments() {
+    throw new Error("Not supported. Use Python service.");
+  }
+  async embedQuery() {
+    throw new Error("Not supported. Use Python service.");
+  }
+}

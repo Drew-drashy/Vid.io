@@ -25,3 +25,4 @@ import "./services/worker.service.js"
     process.exit(1); 
   }
 })();
+ 

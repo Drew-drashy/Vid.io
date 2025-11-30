@@ -21,7 +21,6 @@ export const updateJobStatus = async (req, res) => {
       updateObj.progress = progress;
     }
 
-    // attach error message if status failed
     if (status === "failed" && errorMessage) {
       updateObj.errorMessage = errorMessage;
     }
@@ -44,6 +43,47 @@ export const updateJobStatus = async (req, res) => {
     });
   } catch (err) {
     console.error("Error updating job:", err);
+    return res.status(500).json({
+      ok: false,
+      msg: "Server error",
+    });
+  }
+};
+export const getJobStatus = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    if (!jobId) {
+      return res.status(400).json({
+        ok: false,
+        msg: "jobId is required",
+      });
+    }
+
+    // Fetch job from MongoDB
+    const job = await VideoJob.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({
+        ok: false,
+        msg: "Job not found",
+      });
+    }
+
+    return res.json({
+      ok: true,
+      job: {
+        id: job._id,
+        videoId: job.videoId,
+        status: job.status,          // pending | processing | completed | failed
+        progress: job.progress || 0, // optional
+        errorMessage: job?.errorMessage || null,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+      },
+    });
+  } catch (err) {
+    console.error("Error getting job status:", err);
     return res.status(500).json({
       ok: false,
       msg: "Server error",
