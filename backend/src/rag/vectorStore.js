@@ -44,7 +44,7 @@ export async function searchSimilarChunks(query, videoId, limit = 5) {
       ? {
           must: [
             {
-              key: "videoId",
+              key: "metadata.videoId",
               match: { value: videoId }
             }
           ]

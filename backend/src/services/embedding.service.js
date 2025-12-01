@@ -7,6 +7,6 @@ export async function embedQueryPython(text) {
 
   const data = await resp.json();
   if (!data.embedding) throw new Error("Python returned no embedding");
-
+  console.log(data)
   return data.embedding; // float[768]
 }

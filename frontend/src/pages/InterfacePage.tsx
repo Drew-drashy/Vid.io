@@ -5,18 +5,72 @@ import { useState } from "react";
 import Sidebar, { type VideoResult } from "@/components/sidebar";
 import { useToast } from "@/components/toast-provider";
 import { Card } from "@/components/ui/card";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
+import {
+  useIngestVideoMutation,
+  useQueryVideoMutation,
+  useLazyGetJobStatusQuery,
+} from "@/state/api";
 
 export default function InterfacePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [selectedVideo, setSelectedVideo] = useState<VideoResult | null>(null);
-  const [isAttaching, setIsAttaching] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const { toast } = useToast();
+  const [ingestVideo, { isLoading: isAttaching }] = useIngestVideoMutation();
+  const [triggerJobStatus] = useLazyGetJobStatusQuery();
+  const MAX_FAST_POLL_ATTEMPTS = 40; // ~60s at 1.5s intervals
+
+  const pollJobStatus = (jobId: string, attempt = 0) => {
+    if (!jobId) return;
+
+    // Always refetch from server (don't use cached value)
+    triggerJobStatus(jobId, false)
+      .unwrap()
+      .then((res) => {
+        const status = res.job?.status;
+        if (status === "completed") {
+          setIsVideoReady(true);
+          toast({
+            title: "Video ready",
+            description: "Embeddings prepared. Start chatting!",
+            status: "success",
+          });
+          return;
+        }
+        if (status === "failed") {
+          setIsVideoReady(false);
+          toast({
+            title: "Embedding failed",
+            description: res.job?.errorMessage || "Try reattaching the video.",
+            status: "error",
+          });
+          setSelectedVideo(null);
+          setCurrentJobId(null);
+          return;
+        }
+        // After ~60s, keep polling but less frequently so long jobs can still flip to completed
+        if (attempt === MAX_FAST_POLL_ATTEMPTS) {
+          toast({
+            title: "Still processing",
+            description: "Embedding is taking longer than expected. We'll keep checking.",
+            status: "info",
+          });
+        }
+        const delay = attempt >= MAX_FAST_POLL_ATTEMPTS ? 10000 : 1500;
+        setTimeout(() => pollJobStatus(jobId, attempt + 1), delay);
+      })
+      .catch(() => {
+        const delay = attempt >= MAX_FAST_POLL_ATTEMPTS ? 10000 : 2000;
+        setTimeout(() => pollJobStatus(jobId, attempt + 1), delay);
+      });
+  };
 
   const handleAttachVideo = async (video: VideoResult) => {
     setSelectedVideo(video);
+    setIsVideoReady(false);
+    setCurrentJobId(null);
 
     if (!video.url) {
       toast({
@@ -27,7 +81,6 @@ export default function InterfacePage() {
       return;
     }
 
-    setIsAttaching(true);
     toast({
       title: "Sending video to backend…",
       status: "loading",
@@ -35,37 +88,42 @@ export default function InterfacePage() {
     });
 
     try {
-      const res = await fetch(`${API_BASE}/ingest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoUrl: video.url }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Backend responded with ${res.status}`);
+      const data = await ingestVideo({ videoUrl: video.url }).unwrap();
+      if (data.jobId) {
+        setCurrentJobId(data.jobId);
       }
-
-      const data = await res.json();
-
       setSelectedVideo((prev) =>
         prev
           ? { ...prev, id: data.videoId ?? prev.id }
           : { ...video, id: data.videoId ?? video.id }
       );
 
-      toast({
-        title: "Video ready",
-        description: "Transcript ingested and embeddings prepared.",
-        status: "success",
-      });
+      if (data.status === "completed") {
+        toast({
+          title: "Video ready",
+          description: "Transcript ingested and embeddings prepared.",
+          status: "success",
+        });
+        setIsVideoReady(true);
+      } else {
+        toast({
+          title: "Embedding queued",
+          description: "Processing transcript. We'll notify when ready.",
+          status: "info",
+        });
+        if (data.jobId) {
+          pollJobStatus(data.jobId);
+        }
+      }
     } catch (error) {
       toast({
         title: "Failed to attach video",
         description: error instanceof Error ? error.message : "Unknown error",
         status: "error",
       });
-    } finally {
-      setIsAttaching(false);
+      setIsVideoReady(false);
+      setSelectedVideo(null);
+      setCurrentJobId(null);
     }
   };
 
@@ -90,7 +148,13 @@ export default function InterfacePage() {
           selectedVideo={selectedVideo}
           onAttachVideo={handleAttachVideo}
           isAttaching={isAttaching}
-          onClearVideo={() => setSelectedVideo(null)}
+          isVideoReady={isVideoReady}
+          currentJobId={currentJobId}
+          onClearVideo={() => {
+            setSelectedVideo(null);
+            setIsVideoReady(false);
+            setCurrentJobId(null);
+          }}
         />
       </div>
     </div>
@@ -108,6 +172,8 @@ function ChatArea({
   selectedVideo,
   onAttachVideo,
   isAttaching,
+  isVideoReady,
+  currentJobId,
   onClearVideo,
 }: {
   messages: Message[];
@@ -117,12 +183,14 @@ function ChatArea({
   selectedVideo: VideoResult | null;
   onAttachVideo: (video: VideoResult) => Promise<void> | void;
   isAttaching: boolean;
+  isVideoReady: boolean;
+  currentJobId: string | null;
   onClearVideo: () => void;
 }) {
   const { toast } = useToast();
-  const [isSending, setIsSending] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [linkInput, setLinkInput] = useState("");
+  const [queryVideo, { isLoading: isSending }] = useQueryVideoMutation();
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -197,8 +265,14 @@ function ChatArea({
       });
       return;
     }
-
-    setIsSending(true);
+    if (!isVideoReady || isAttaching) {
+      toast({
+        title: "Still processing",
+        description: "Wait for embeddings to finish before chatting.",
+        status: "info",
+      });
+      return;
+    }
 
     setMessages((prev) => [...prev, { role: "user", text: input }]);
     toast({
@@ -210,20 +284,10 @@ function ChatArea({
     setInput("");
 
     try {
-      const res = await fetch(`${API_BASE}/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: input,
-          videoId: selectedVideo.id,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Backend responded with ${res.status}`);
-      }
-
-      const data = await res.json();
+      const data = await queryVideo({
+        question: input,
+        videoId: selectedVideo.id,
+      }).unwrap();
 
       setMessages((prev) => [
         ...prev,
@@ -240,8 +304,6 @@ function ChatArea({
         description: error instanceof Error ? error.message : "Unknown error",
         status: "error",
       });
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -299,6 +361,17 @@ function ChatArea({
             >
               Open on YouTube
             </a>
+            <div className="mt-1 text-xs font-semibold">
+              {isAttaching && !isVideoReady ? (
+                <span className="text-amber-500">Processing…</span>
+              ) : !isAttaching && currentJobId && !isVideoReady ? (
+                <span className="text-amber-500">Waiting for embeddings…</span>
+              ) : isVideoReady ? (
+                <span className="text-emerald-500">Ready to chat</span>
+              ) : (
+                <span className="text-muted-foreground">Pending…</span>
+              )}
+            </div>
           </div>
           <Button
             variant="ghost"
@@ -329,8 +402,15 @@ function ChatArea({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-        <Button onClick={sendMessage} disabled={isSending}>
-          {isSending ? "Sending..." : "Send"}
+        <Button
+          onClick={sendMessage}
+          disabled={isSending || isAttaching || !selectedVideo || !isVideoReady}
+        >
+          {isAttaching && !isVideoReady
+            ? "Processing..."
+            : isSending
+            ? "Sending..."
+            : "Send"}
         </Button>
       </div>
     </div>
@@ -338,6 +418,8 @@ function ChatArea({
 }
 function ChatBubble({ role, text }: { role: Message["role"]; text: string }) {
   const isUser = role === "user";
+  const safeText =
+    typeof text === "string" ? text : JSON.stringify(text, null, 2);
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -351,7 +433,7 @@ function ChatBubble({ role, text }: { role: Message["role"]; text: string }) {
           shadow-md
         `}
       >
-        {text}
+        {safeText}
       </div>
     </div>
   );

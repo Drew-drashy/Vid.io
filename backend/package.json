@@ -20,6 +20,7 @@
     "@langchain/textsplitters": "^1.0.0",
     "@qdrant/js-client-rest": "^1.16.0",
     "bullmq": "^5.65.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "ioredis": "^5.8.2",

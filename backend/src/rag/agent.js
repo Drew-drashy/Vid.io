@@ -1,6 +1,7 @@
 import z from "zod";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { MemorySaver } from "@langchain/langgraph";
+import { createAgent } from "langchain";
 import { tool } from "langchain";
 import { searchSimilarChunks } from "./vectorStore.js";
 
@@ -13,10 +14,11 @@ const retrieveTool = tool(
   async ({ query, videoId }) => {
     const results = await searchSimilarChunks(query, videoId);
 
-    return results
-      .map(r => r.payload?.text)
-      .filter(Boolean)
-      .join("\n");
+    const contents = results
+      .map(r => r.payload?.text || r.payload?.page_content || r.payload?.metadata?.text)
+      .filter(Boolean);
+
+    return contents.join("\n");
   },
   {
     name: "retrieve_tool",

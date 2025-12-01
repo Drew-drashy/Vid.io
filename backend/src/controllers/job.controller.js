@@ -3,6 +3,7 @@ import VideoJob from "../models/videoJob.models.js";
 export const updateJobStatus = async (req, res) => {
   try {
     const { jobId, videoId, status, errorMessage, progress } = req.body;
+    console.log('in the udpate completed')
 
     if (!jobId || !status) {
       return res.status(400).json({

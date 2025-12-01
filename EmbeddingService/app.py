@@ -31,6 +31,7 @@ def run_job(req: ProcessReq):
 
     try:
         print(f"[Thread] Starting job {jobId}")
+        print('bhaduu')
 
         # 1. SPLIT using LangChain splitter
         chunks = split_into_chunks(req.transcript, chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
@@ -70,6 +71,7 @@ class QueryReq(BaseModel):
 async def embed_query(req: QueryReq):
     try:
         print(req)
+        print('hii i am daddy')
         vector = embed_query_text(req.text)
         return {"embedding": vector}
     except Exception as e:
